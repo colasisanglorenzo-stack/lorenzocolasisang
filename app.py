@@ -21,8 +21,8 @@ def get_course():
     return jsonify({
         "course_code": "CC101",
         "course_title": "Introduction to Computing",
-        "instructor": "Instructor Name",
-        "semester": "First Semester",
+        "instructor": "Instr. Rene Ardou ",
+        "semester": "1st Semester",
         "academic_year": "2026-2027"
     })
 
