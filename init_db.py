@@ -26,6 +26,7 @@ students = [
     ('2024-00125', 'Adrian Bunayos', 'BSIT', 3, 'B'),
     ('2024-00184', 'Lorenzo Colasisang', 'BSIT', 3, 'A'),
     ('2024-00347', 'Kate Ashley Distura', 'BSIT', 3, 'B'),
+    ('2024-00087', 'Kc Jane Marie Ladoing', 'BSIT', 3, 'B'),
 ]
 
 # Insert student records into the database
