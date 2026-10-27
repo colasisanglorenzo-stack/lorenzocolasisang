@@ -127,7 +127,8 @@
 
         #result,
         #greeting,
-        #courseResult {
+        #courseResult,
+        #studentList {
             display: none;
             margin-top: 18px;
             padding: 16px;
@@ -139,17 +140,20 @@
 
         #result.visible,
         #greeting.visible,
-        #courseResult.visible {
+        #courseResult.visible,
+        #studentList.visible {
             display: block;
         }
 
         #result p,
-        #courseResult p {
+        #courseResult p,
+        #studentList p {
             margin: 9px 0;
         }
 
         #result strong,
-        #courseResult strong {
+        #courseResult strong,
+        #studentList strong {
             color: #bd7257;
         }
 
@@ -169,9 +173,64 @@
             font-weight: bold;
         }
 
-        #courseResult {
+        #courseResult,
+        #studentList {
             background: #fff8f3;
             border-left-color: #d98565;
+        }
+
+        .empty-message {
+            color: #9b8075;
+            font-style: italic;
+        }
+
+        /* Students Database Table */
+        .student-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 15px;
+            border-radius: 10px;
+        }
+
+        .student-table {
+            width: 100%;
+            min-width: 550px;
+            border-collapse: collapse;
+            background: #ffffff;
+            font-size: 14px;
+        }
+
+        .student-table th {
+            background: #ef9b7b;
+            color: #ffffff;
+            padding: 12px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .student-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f7dfd2;
+            color: #65483f;
+            text-align: left;
+        }
+
+        .student-table tr:nth-child(even) {
+            background: #fff7f2;
+        }
+
+        .student-table tbody tr:hover {
+            background: #ffe8dc;
+        }
+
+        .student-table th,
+        .student-table td {
+            border-right: 1px solid #f7dfd2;
+        }
+
+        .student-table th:last-child,
+        .student-table td:last-child {
+            border-right: none;
         }
 
         hr {
@@ -276,11 +335,33 @@
         <div id="courseResult" aria-live="polite"></div>
     </section>
 
+    <!-- Students from Database -->
+    <section class="card">
+        <hr>
+
+        <h2>🗃️ Students from Database</h2>
+
+        <p class="description">
+            View the student records stored in your SQLite database.
+        </p>
+
+        <button
+            id="loadStudentsBtn"
+            type="button"
+            onclick="loadStudents()"
+        >
+            Load Students
+        </button>
+
+        <div id="studentList" aria-live="polite"></div>
+    </section>
+
     <footer>
-        Made with 🍑 using HTML, CSS, JavaScript, and Flask
+        Made with 🍑 using HTML, CSS, JavaScript, Flask, and SQLite
     </footer>
 
     <script>
+        // Load individual student information
         async function loadStudent() {
             const result = document.getElementById("result");
             const button = document.getElementById("studentBtn");
@@ -316,7 +397,9 @@
 
                     p.append(
                         strong,
-                        document.createTextNode(value ?? "Not available")
+                        document.createTextNode(
+                            String(value ?? "Not available")
+                        )
                     );
 
                     result.appendChild(p);
@@ -325,6 +408,7 @@
             } catch (error) {
                 result.textContent =
                     "Unable to retrieve student data. Please check your API server.";
+
                 console.error(error);
 
             } finally {
@@ -332,6 +416,7 @@
             }
         }
 
+        // Greeting API
         document.getElementById("greetingForm").addEventListener(
             "submit",
             async function(event) {
@@ -361,21 +446,26 @@
                     }
 
                     const data = await response.json();
-                    greeting.textContent = data.message;
+
+                    greeting.textContent =
+                        data.message ?? "No greeting message was returned.";
 
                 } catch (error) {
                     greeting.textContent =
                         "Unable to retrieve greeting. Please check your API server.";
+
                     console.error(error);
                 }
             }
         );
 
+        // Course Information API
         document.getElementById("loadCourseBtn").addEventListener(
             "click",
             async function() {
                 const courseResult =
                     document.getElementById("courseResult");
+
                 const button = document.getElementById("loadCourseBtn");
 
                 courseResult.classList.add("visible");
@@ -409,7 +499,9 @@
 
                         p.append(
                             strong,
-                            document.createTextNode(value ?? "Not available")
+                            document.createTextNode(
+                                String(value ?? "Not available")
+                            )
                         );
 
                         courseResult.appendChild(p);
@@ -418,6 +510,7 @@
                 } catch (error) {
                     courseResult.textContent =
                         "Unable to retrieve course information. Make sure your Flask app has a /course route.";
+
                     console.error(error);
 
                 } finally {
@@ -425,6 +518,101 @@
                 }
             }
         );
+
+        // Display Students from Database in Table Columns
+        async function loadStudents() {
+            const studentList = document.getElementById("studentList");
+            const button = document.getElementById("loadStudentsBtn");
+
+            studentList.classList.add("visible");
+            studentList.textContent = "Loading student records...";
+            button.disabled = true;
+
+            try {
+                const response = await fetch("/students");
+
+                if (!response.ok) {
+                    throw new Error("Request failed: " + response.status);
+                }
+
+                const data = await response.json();
+
+                if (!Array.isArray(data)) {
+                    throw new Error("Invalid student data received.");
+                }
+
+                studentList.replaceChildren();
+
+                if (data.length === 0) {
+                    const message = document.createElement("p");
+
+                    message.className = "empty-message";
+                    message.textContent =
+                        "No student records found in the database.";
+
+                    studentList.appendChild(message);
+                    return;
+                }
+
+                const wrapper = document.createElement("div");
+                wrapper.className = "student-table-wrapper";
+
+                const table = document.createElement("table");
+                table.className = "student-table";
+
+                // Table column headings
+                const columns = [
+                    ["student_id", "Student ID"],
+                    ["name", "Name"],
+                    ["program", "Program"],
+                    ["year", "Year"],
+                    ["section", "Section"]
+                ];
+
+                const thead = document.createElement("thead");
+                const headerRow = document.createElement("tr");
+
+                columns.forEach(function(column) {
+                    const th = document.createElement("th");
+                    th.textContent = column[1];
+                    headerRow.appendChild(th);
+                });
+
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+
+                // Add database records to table rows
+                const tbody = document.createElement("tbody");
+
+                data.forEach(function(student) {
+                    const row = document.createElement("tr");
+
+                    columns.forEach(function(column) {
+                        const td = document.createElement("td");
+                        const value = student[column[0]];
+
+                        td.textContent = String(value ?? "Not available");
+
+                        row.appendChild(td);
+                    });
+
+                    tbody.appendChild(row);
+                });
+
+                table.appendChild(tbody);
+                wrapper.appendChild(table);
+                studentList.appendChild(wrapper);
+
+            } catch (error) {
+                studentList.textContent =
+                    "Unable to retrieve student records. Check your Flask /students route and database connection.";
+
+                console.error(error);
+
+            } finally {
+                button.disabled = false;
+            }
+        }
     </script>
 
 </body>
